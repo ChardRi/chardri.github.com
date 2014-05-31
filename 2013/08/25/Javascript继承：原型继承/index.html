@@ -1,0 +1,446 @@
+
+ <!DOCTYPE HTML>
+<html >
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Javascript继承：原型继承 | Chard&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+    
+    <meta name="author" content="Chard">
+    
+    <meta name="description" itemprop="description" content="原型继承是Javascript最重要的语言特性之一，它使得Javascript拥有了丰富、多变且适用于动态语言的对象系统。本文主要讨论原型继承中的几种实现方式(部分内容转自&#39;Javascript面向对象编程（二）：构造函数的继承&#39;)。">
+    
+    
+    
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/pacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/pacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="Chard&#39;s Blog" title="Chard&#39;s Blog"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="Chard&#39;s Blog">Chard&#39;s Blog</a></h1>
+				<h2 class="blog-motto">如果完全的活在当下，在每一刻过去的时候你会完全的放下，那么每一刻都会是新的。</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">Home</a></li>
+					
+						<li><a href="/archives">Archives</a></li>
+					
+					<li>
+					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="text" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
+						<input type="hidden" name="q" value="site:yoursite.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2013/08/25/Javascript继承：原型继承/" title="Javascript继承：原型继承" itemprop="url">Javascript继承：原型继承</a>
+  </h1>
+  <p class="article-author">By
+    
+      <a href="http://yoursite.com" title="Chard">Chard</a>
+    </p>
+  <p class="article-time">
+    <time datetime="2013-08-25T14:45:34.000Z" itemprop="datePublished">Aug 25 2013</time>
+    Updated:<time datetime="2014-05-31T15:53:19.000Z" itemprop="dateModified">May 31 2014</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#prototype&#x6A21;&#x5F0F;"><span class="toc-number">1.</span> <span class="toc-text">prototype&#x6A21;&#x5F0F;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype"><span class="toc-number">2.</span> <span class="toc-text">&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;"><span class="toc-number">3.</span> <span class="toc-text">&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x5229;&#x7528;Object-create"><span class="toc-number">4.</span> <span class="toc-text">&#x5229;&#x7528;Object.create</span></a></li></ol>
+		</div>
+		
+		<p>&#x539F;&#x578B;&#x7EE7;&#x627F;&#x662F;Javascript&#x6700;&#x91CD;&#x8981;&#x7684;&#x8BED;&#x8A00;&#x7279;&#x6027;&#x4E4B;&#x4E00;&#xFF0C;&#x5B83;&#x4F7F;&#x5F97;Javascript&#x62E5;&#x6709;&#x4E86;&#x4E30;&#x5BCC;&#x3001;&#x591A;&#x53D8;&#x4E14;&#x9002;&#x7528;&#x4E8E;&#x52A8;&#x6001;&#x8BED;&#x8A00;&#x7684;&#x5BF9;&#x8C61;&#x7CFB;&#x7EDF;&#x3002;&#x672C;&#x6587;&#x4E3B;&#x8981;&#x8BA8;&#x8BBA;&#x539F;&#x578B;&#x7EE7;&#x627F;&#x4E2D;&#x7684;&#x51E0;&#x79CD;&#x5B9E;&#x73B0;&#x65B9;&#x5F0F;(&#x90E8;&#x5206;&#x5185;&#x5BB9;&#x8F6C;&#x81EA;<a href="http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_inheritance.html" target="_blank" rel="external">Javascript&#x9762;&#x5411;&#x5BF9;&#x8C61;&#x7F16;&#x7A0B;&#xFF08;&#x4E8C;&#xFF09;&#xFF1A;&#x6784;&#x9020;&#x51FD;&#x6570;&#x7684;&#x7EE7;&#x627F;</a>)&#x3002;</p>
+<h3 id="prototype&#x6A21;&#x5F0F;">prototype&#x6A21;&#x5F0F;</h3>
+<p>&#x5982;&#x679C;Dog&#x7684;&#x4E00;&#x4E2A;&#x5BF9;&#x8C61;&#xFF0C;&#x6307;&#x5411;&#x4E86;Animal&#x7684;&#x4E00;&#x4E2A;&#x5B9E;&#x4F8B;&#xFF0C;&#x90A3;&#x4E48;&#x6240;&#x6709;Dog&#x7684;&#x5B9E;&#x4F8B;&#xFF0C;&#x90FD;&#x80FD;&#x7EE7;&#x627F;Animal&#x4E86;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">Animal</span><span class="params">()</span>{</span>
+	<span class="keyword">this</span>.species = <span class="string">&quot;&#x52A8;&#x7269;&quot;</span>;
+	<span class="keyword">this</span>.getSpecies = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+		console.log(<span class="keyword">this</span>.species);
+	}
+}
+<span class="function"><span class="keyword">function</span> <span class="title">Dog</span><span class="params">(name,color)</span>{</span>
+	<span class="keyword">this</span>.name = name;
+	<span class="keyword">this</span>.color = color;
+}
+Dog.prototype = <span class="keyword">new</span> Animal();
+Dog.prototype.constructor = Dog; <span class="comment">// &#x91CD;&#x8BBE;&#x6784;&#x9020;&#x51FD;&#x6570;</span>
+<span class="keyword">var</span> dogA = <span class="keyword">new</span> Dog(<span class="string">&quot;&#x5927;&#x9EC4;&quot;</span>,<span class="string">&quot;&#x9EC4;&#x8272;&quot;</span>);
+console.log(dogA.species); <span class="comment">// &#x52A8;&#x7269;</span>
+</pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h3 id="&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype">&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype</h3>
+<p>&#x7531;&#x4E8E;Animal&#x5BF9;&#x8C61;&#x4E2D;&#xFF0C;&#x4E0D;&#x53D8;&#x7684;&#x5C5E;&#x6027;&#x90FD;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x5199;&#x5165;<code>Animal.prototype</code>&#x3002;&#x6240;&#x4EE5;&#xFF0C;&#x6211;&#x4EEC;&#x4E5F;&#x53EF;&#x4EE5;&#x8BA9;<code>Dog()</code>&#x8DF3;&#x8FC7;<code>Animal()</code>&#xFF0C;&#x76F4;&#x63A5;&#x7EE7;&#x627F;<code>Animal.prototype</code>&#x3002; &#x73B0;&#x5728;&#xFF0C;&#x6211;&#x4EEC;&#x5148;&#x5C06;Animal&#x5BF9;&#x8C61;&#x6539;&#x5199;&#xFF1A;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">Animal</span><span class="params">()</span>{</span> }
+Animal.prototype.species = <span class="string">&quot;&#x52A8;&#x7269;&quot;</span>;
+</pre></td></tr></table></figure>
+
+<p>&#x7136;&#x540E;&#xFF0C;&#x5C06;Dog&#x7684;<code>prototype</code>&#x5BF9;&#x8C61;&#xFF0C;&#x7136;&#x540E;&#x6307;&#x5411;Animal&#x7684;<code>prototype</code>&#x5BF9;&#x8C61;&#xFF0C;&#x8FD9;&#x6837;&#x5C31;&#x5B8C;&#x6210;&#x4E86;&#x7EE7;&#x627F;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre>Dog<span class="preprocessor">.prototype</span> = Animal<span class="preprocessor">.prototype</span><span class="comment">;</span>
+Dog<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span> = Dog<span class="comment">; // &#x91CD;&#x8BBE;&#x6784;&#x9020;&#x51FD;&#x6570;</span>
+var dogA = new Dog(<span class="string">&quot;&#x5927;&#x9EC4;&quot;</span>,<span class="string">&quot;&#x9EC4;&#x8272;&quot;</span>)<span class="comment">;</span>
+console<span class="preprocessor">.log</span>(dogA<span class="preprocessor">.species</span>)<span class="comment">; // &#x52A8;&#x7269;</span>
+</pre></td></tr></table></figure>
+
+<p>&#x4E0E;&#x524D;&#x4E00;&#x79CD;&#x65B9;&#x6CD5;&#x76F8;&#x6BD4;&#xFF0C;&#x8FD9;&#x6837;&#x505A;&#x7684;&#x4F18;&#x70B9;&#x662F;&#x6548;&#x7387;&#x6BD4;&#x8F83;&#x9AD8;&#xFF08;&#x4E0D;&#x7528;&#x6267;&#x884C;&#x548C;&#x5EFA;&#x7ACB;Animal&#x7684;&#x5B9E;&#x4F8B;&#x4E86;&#xFF09;&#xFF0C;&#x6BD4;&#x8F83;&#x7701;&#x5185;&#x5B58;&#x3002;&#x7F3A;&#x70B9;&#x662F;<code>Dog.prototype</code>&#x548C;<code>Animal.prototype</code>&#x73B0;&#x5728;&#x6307;&#x5411;&#x4E86;&#x540C;&#x4E00;&#x4E2A;&#x5BF9;&#x8C61;&#xFF0C;&#x90A3;&#x4E48;&#x4EFB;&#x4F55;&#x5BF9;<code>Dog.prototype</code>&#x7684;&#x4FEE;&#x6539;&#xFF0C;&#x90FD;&#x4F1A;&#x53CD;&#x6620;&#x5230;<code>Animal.prototype</code>&#x3002;<br>&#x6240;&#x4EE5;&#xFF0C;&#x4E0A;&#x9762;&#x8FD9;&#x4E00;&#x6BB5;&#x4EE3;&#x7801;&#x5176;&#x5B9E;&#x662F;&#x6709;&#x95EE;&#x9898;&#x7684;&#x3002;&#x8BF7;&#x770B;&#x7B2C;&#x4E8C;&#x884C;&#xFF1A;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>Dog<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span> = Dog<span class="comment">;</span>
+</pre></td></tr></table></figure>
+
+<p>&#x8FD9;&#x4E00;&#x53E5;&#x5B9E;&#x9645;&#x4E0A;&#x628A;<code>Animal.prototype</code>&#x5BF9;&#x8C61;&#x7684;<code>constructor</code>&#x5C5E;&#x6027;&#x4E5F;&#x6539;&#x6389;&#x4E86;&#xFF01;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>console<span class="preprocessor">.log</span>(Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span>)<span class="comment">; // Dog</span>
+</pre></td></tr></table></figure>
+
+<p>&#x5E76;&#x4E14;&#xFF0C;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x6B64;&#x5904;&#x5BF9;&#x4E8E;<code>Dog.prototype</code>&#x7684;&#x4FEE;&#x6539;&#xFF08;&#x5177;&#x4F53;&#x539F;&#x56E0;&#x53C2;&#x8003;&#x535A;&#x6587;&#xFF1A;Javascript&#x53D8;&#x91CF;&#xFF09;:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre>Dog<span class="preprocessor">.prototype</span> = {
+	species:<span class="string">&quot;&#x690D;&#x7269;&quot;</span>
+}
+console<span class="preprocessor">.log</span>(Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.species</span>)<span class="comment">; //&#x52A8;&#x7269;&#x3002;&#x6B64;&#x65F6;Dog.prototype&#x91CD;&#x65B0;&#x5F00;&#x8F9F;&#x4E86;&#x4E00;&#x4E2A;&#x5185;&#x5B58;&#x5730;&#x5740;&#xFF0C;&#x4E0E;Animal.prototype&#x6307;&#x5411;&#x4E0D;&#x540C;&#x3002;</span>
+Dog<span class="preprocessor">.prototype</span><span class="preprocessor">.species</span> = <span class="string">&quot;&#x690D;&#x7269;&quot;</span><span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.species</span>)<span class="comment">; //&#x690D;&#x7269;</span>
+</pre></td></tr></table></figure>
+
+<h3 id="&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;">&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;</h3>
+<p>&#x7531;&#x4E8E;&#x201D;&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype&#x201D;&#x5B58;&#x5728;&#x4E0A;&#x8FF0;&#x7684;&#x7F3A;&#x70B9;&#xFF0C;&#x6240;&#x4EE5;&#x5C31;&#x6709;&#x8FD9;&#x79CD;&#x65B9;&#x6CD5;&#xFF0C;&#x5229;&#x7528;&#x4E00;&#x4E2A;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="keyword">var</span> F = <span class="function"><span class="keyword">function</span><span class="params">()</span><span class="comment">{}</span>;</span>
+F.prototype = Animal.prototype;
+Dog.prototype = <span class="keyword">new</span> F();
+Dog.prototype.<span class="keyword">constructor</span> = Dog;
+</pre></td></tr></table></figure>
+
+<p>F&#x662F;&#x7A7A;&#x5BF9;&#x8C61;&#xFF0C;&#x6240;&#x4EE5;&#x51E0;&#x4E4E;&#x4E0D;&#x5360;&#x5185;&#x5B58;&#x3002;&#x8FD9;&#x65F6;&#xFF0C;&#x4FEE;&#x6539;Dog&#x7684;<code>prototype</code>&#x5BF9;&#x8C61;&#xFF0C;&#x5C31;&#x4E0D;&#x4F1A;&#x5F71;&#x54CD;&#x5230;Animal&#x7684;<code>prototype</code>&#x5BF9;&#x8C61;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>console<span class="preprocessor">.log</span>(Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span>)<span class="comment">; // Animal</span>
+</pre></td></tr></table></figure>
+
+<p>&#x6211;&#x4EEC;&#x5C06;&#x4E0A;&#x9762;&#x7684;&#x65B9;&#x6CD5;&#xFF0C;&#x5C01;&#x88C5;&#x6210;&#x4E00;&#x4E2A;&#x51FD;&#x6570;&#xFF0C;&#x4FBF;&#x4E8E;&#x4F7F;&#x7528;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="function"><span class="keyword">function</span> <span class="title">extend</span><span class="params">(Child, Parent)</span> {</span>
+	<span class="keyword">var</span> F = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>};
+	F.prototype = <span class="keyword">Parent</span>.prototype;
+	Child.prototype = <span class="keyword">new</span> F();
+	Child.prototype.constructor = Child;
+	Child.uber = <span class="keyword">Parent</span>.prototype;
+}
+</pre></td></tr></table></figure>
+
+<p>&#x4F7F;&#x7528;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x65B9;&#x6CD5;&#x5982;&#x4E0B;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+</pre></td><td class="code"><pre>extend(Dog,Animal);
+<span class="built_in">var</span> dogA <span class="subst">=</span> <span class="literal">new</span> Dog(<span class="string">&quot;&#x5927;&#x6BDB;&quot;</span>,<span class="string">&quot;&#x9EC4;&#x8272;&quot;</span>);
+console<span class="built_in">.</span><span class="keyword">log</span>(dogA<span class="built_in">.</span>species); <span class="comment">// &#x52A8;&#x7269;</span>
+</pre></td></tr></table></figure>
+
+<p>&#x8FD9;&#x4E2A;<code>extend</code>&#x51FD;&#x6570;&#xFF0C;&#x5C31;&#x662F;YUI&#x5E93;&#x5982;&#x4F55;&#x5B9E;&#x73B0;&#x7EE7;&#x627F;&#x7684;&#x65B9;&#x6CD5;&#x3002; &#x53E6;&#x5916;&#xFF0C;&#x8BF4;&#x660E;&#x4E00;&#x70B9;&#xFF0C;&#x51FD;&#x6570;&#x4F53;&#x6700;&#x540E;&#x4E00;&#x884C;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>Child<span class="preprocessor">.uber</span> = Parent<span class="preprocessor">.prototype</span><span class="comment">;</span>
+</pre></td></tr></table></figure>
+
+<p>&#x610F;&#x601D;&#x662F;&#x4E3A;&#x5B50;&#x5BF9;&#x8C61;&#x8BBE;&#x4E00;&#x4E2A;<code>uber</code>&#x5C5E;&#x6027;&#xFF0C;&#x8FD9;&#x4E2A;&#x5C5E;&#x6027;&#x76F4;&#x63A5;&#x6307;&#x5411;&#x7236;&#x5BF9;&#x8C61;&#x7684;<code>prototype</code>&#x5C5E;&#x6027;&#x3002;&#xFF08;uber&#x662F;&#x4E00;&#x4E2A;&#x5FB7;&#x8BED;&#x8BCD;&#xFF0C;&#x610F;&#x601D;&#x662F;&#x201D;&#x5411;&#x4E0A;&#x201D;&#x3001;&#x201D;&#x4E0A;&#x4E00;&#x5C42;&#x201D;&#x3002;&#xFF09;&#x8FD9;&#x7B49;&#x4E8E;&#x5728;&#x5B50;&#x5BF9;&#x8C61;&#x4E0A;&#x6253;&#x5F00;&#x4E00;&#x6761;&#x901A;&#x9053;&#xFF0C;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x8C03;&#x7528;&#x7236;&#x5BF9;&#x8C61;&#x7684;&#x65B9;&#x6CD5;&#x3002;&#x8FD9;&#x4E00;&#x884C;&#x653E;&#x5728;&#x8FD9;&#x91CC;&#xFF0C;&#x53EA;&#x662F;&#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x7EE7;&#x627F;&#x7684;&#x5B8C;&#x5907;&#x6027;&#xFF0C;&#x7EAF;&#x5C5E;&#x5907;&#x7528;&#x6027;&#x8D28;&#x3002;</p>
+<h3 id="&#x5229;&#x7528;Object-create">&#x5229;&#x7528;Object.create</h3>
+<p><code>Object.create</code>&#x662F;ECMAScript&#x7B2C;&#x4E94;&#x7248;&#x4E2D;&#x7684;&#x65B9;&#x6CD5;&#x3002;&#x4F7F;&#x7528;&#x8FD9;&#x4E2A;&#x65B9;&#x6CD5;&#xFF0C;&#x201D;&#x7C7B;&#x201D;&#x5C31;&#x662F;&#x4E00;&#x4E2A;&#x5BF9;&#x8C61;&#xFF0C;&#x4E0D;&#x662F;&#x51FD;&#x6570;&#x3002;<br>&#x8FD9;&#x79CD;&#x65B9;&#x6CD5;&#x548C;&#x201C;&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;&#x201D;&#x4E00;&#x81F4;&#xFF0C;&#x53EA;&#x662F;ECMAScript&#x7B2C;&#x4E94;&#x7248;&#x539F;&#x751F;&#x81EA;&#x5E26;&#x8FD9;&#x4E2A;&#x65B9;&#x6CD5;&#x3002;</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>Dog<span class="preprocessor">.prototype</span> = Object<span class="preprocessor">.create</span>(Animal<span class="preprocessor">.prototype</span>)<span class="comment">;</span>
+</pre></td></tr></table></figure>  
+	</div>
+		<footer class="article-footer clearfix">
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Javascript/">Javascript</a><a href="/tags/基础/">基础</a>
+  </div>
+
+
+
+
+<div class="article-share" id="share">
+
+  <div data-url="http://yoursite.com/2013/08/25/Javascript继承：原型继承/" data-title="Javascript继承：原型继承 | Chard&#39;s Blog" data-tsina="1661610287" class="share clearfix">
+  </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2013/08/18/Javascript变量/"  title="Javascript变量">
+ <strong>NEXT:</strong><br/> 
+ <span>Javascript变量
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section class="comment">
+	<div class="ds-thread"></div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">Contents</strong>
+  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#prototype&#x6A21;&#x5F0F;"><span class="toc-number">1.</span> <span class="toc-text">prototype&#x6A21;&#x5F0F;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype"><span class="toc-number">2.</span> <span class="toc-text">&#x76F4;&#x63A5;&#x7EE7;&#x627F;prototype</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;"><span class="toc-number">3.</span> <span class="toc-text">&#x5229;&#x7528;&#x7A7A;&#x5BF9;&#x8C61;&#x4F5C;&#x4E3A;&#x4E2D;&#x4ECB;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#&#x5229;&#x7528;Object-create"><span class="toc-number">4.</span> <span class="toc-text">&#x5229;&#x7528;Object.create</span></a></li></ol>
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">Tags</p>
+		<ul class="clearfix">
+		
+			<li><a href="/tags/Javascript/" title="Javascript">Javascript<sup>3</sup></a></li>
+		
+			<li><a href="/tags/基础/" title="基础">基础<sup>3</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  <div class="rsspart">
+	<a href="null" target="_blank" title="rss">RSS</a>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/1661610287" target="_blank" title="weibo"></a>
+		
+		
+		
+		<a href="https://github.com/ChardRi" target="_blank" title="github"></a>
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://zespia.tw/hexo/" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/A-limon/pacman" target="_blank" title="Pacman">Pacman</a> © 2014 
+		
+		<a href="http://yoursite.com" target="_blank" title="Chard">Chard</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://s.jiathis.com/qrcode.php?url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});     
+</script>
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"chard"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+  </body>
+</html>
